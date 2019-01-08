@@ -1,0 +1,27 @@
+# This is a sample build configuration for Java with Maven.
+# You can find official guides at https://confluence.atlassian.com/x/zd-5Mw.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: maven:3.3.9
+
+pipelines:
+  # default behaviour for all branches and all tags
+  default:
+    - step:
+        caches:
+          - maven
+        script:
+          # -B batch mode makes Maven less verbose
+          - mvn -B clean verify
+  branches:
+    # master uses wagon to publishes to the 'launcher-ftp-distribution-server'
+    master:
+      - step:
+          caches:
+            - maven
+          script:
+            - mkdir target
+            # Create a custom settings xml which pulls the FTP Username and Password from the environment variable
+            - echo "<settings><localRepository>~/.m2/repository</localRepository><servers><server><id>launcher-ftp-distribution-server</id><username>$FTP_USER</username><password>$FTP_PASS</password></server></servers></settings>" > target/settings.xml
+            # -B batch mode makes Maven less verbose
+            - mvn -B -s target/settings.xml clean verify wagon:upload-single

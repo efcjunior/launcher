@@ -1,0 +1,61 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>bin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <fileSets>
+        <!-- main resources -->
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>runtime-cli/src/main/resources/</directory>
+            <includes>
+                <include>**</include>
+            </includes>
+            <excludes>
+                <exclude>application-dev.yml</exclude>
+                <exclude>application-test.yml</exclude>
+                <exclude>banner.txt</exclude>
+                <exclude>logback.xml</exclude>
+                <exclude>static/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- main application jar file -->
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>runtime-cli/${project.build.directory}</directory>
+            <includes>
+                <include>${project.parent.build.finalName}.jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- run scripts-->
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.build.directory}/bin</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+
+        <!-- log directory -->
+        <fileSet>
+            <outputDirectory>logs</outputDirectory>
+            <directory>.</directory>
+            <excludes>
+                <exclude>*/**</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- documentation -->
+        <fileSet>
+            <outputDirectory>.</outputDirectory>
+            <directory>${project.basedir}/integration-tests/${project.build.directory}/generated-docs</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>

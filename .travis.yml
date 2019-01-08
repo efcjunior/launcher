@@ -1,0 +1,31 @@
+
+# To generate GITHUB_TOKEN go to:
+# "upper right corner options menu" -> settings -> Developer settings -> 
+# Personal access tokens -> Generate new tokensudo: required
+
+language: java
+
+services:
+  - docker
+
+before_install:
+  - docker pull djfarrelly/maildev
+
+install:
+  - docker run -d -p 1080:80 -p 1025:25 djfarrelly/maildev
+
+script:
+# -B batch mode makes Maven less verbose
+  - mvn -B clean verify
+
+after_success:
+- cp $TRAVIS_BUILD_DIR/core/target/generated-docs/module-core.html $TRAVIS_BUILD_DIR/index.html
+- cp $TRAVIS_BUILD_DIR/user-profile/target/generated-docs/module-core.html $TRAVIS_BUILD_DIR/user-profile.html
+
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  keep-history: false
+  on:
+    branch: master

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.systemkern</groupId>
+        <artifactId>launcher-parent</artifactId>
+        <version>0.1</version>
+        <relativePath>parent/pom.xml</relativePath>
+    </parent>
+    <packaging>pom</packaging>
+
+    <artifactId>application-id</artifactId>
+
+    <description>
+        This pom does the following:
+        * Aggregation of application modules
+        * Distribution of the application to an ftp server via mvn target "wagon:upload-single"
+    </description>
+
+    <modules>
+        <module>core</module>
+        <module>file-upload</module>
+        <module>main-service</module>
+        <module>parent</module>
+        <module>user-profile</module>
+        <module>hermes</module>
+    </modules>
+
+    <properties>
+        <distribution-server>ftp.systemkern.com</distribution-server>
+        <distribution-url>ftp://${distribution-server}/kunden/</distribution-url>
+    </properties>
+
+    <build>
+        <finalName>${project.parent.build.finalName}</finalName>
+        <defaultGoal>clean verify</defaultGoal>
+        <plugins>
+            <!-- Detekt plugin for Kotlin Code Analysis
+                 https://github.com/arturbosch/detekt
+            -->
+            <plugin>
+                <groupId>com.github.ozsie</groupId>
+                <artifactId>detekt-maven-plugin</artifactId>
+                <version>${detekt-maven-plugin-version}</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <input>"${basedir}/core/src/main/kotlin"</input>
+                            <input>"${basedir}/user-profile/src/main/kotlin"</input>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- rewrite run scripts with correct application jar name -->
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <executions>
+                    <execution>
+                        <id>replace-for-documentation</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <preserveDir>true</preserveDir>
+                            <basedir>${basedir}/src/bin</basedir>
+                            <outputBasedir>${project.build.directory}</outputBasedir>
+                            <outputDir>bin</outputDir>
+                            <ignoreErrors>true</ignoreErrors>
+                            <regex>false</regex>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <filesToInclude>
+                                *.*
+                            </filesToInclude>
+                            <replacements>
+                                <replacement>
+                                    <token>finalName</token>
+                                    <value>${parent.build.finalName}</value>
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- assemble the dist zip file -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/cli-assembly.xml</descriptor>
+                    </descriptors>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- upload the generated zip to the customer ftp -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>wagon-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <configuration>
+                    <goal>upload-single</goal>
+                    <serverId>launcher-ftp-distribution-server</serverId>
+                    <fromFile>${project.build.directory}/${project.build.finalName}.zip
+                    </fromFile>
+                    <url>${distribution-url}</url>
+                    <toFile>${project.build.finalName}.zip</toFile>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <extensions>
+            <!-- uploading the final product to ftp -->
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ftp</artifactId>
+                <version>${wagon-ftp-maven-plugin.version}</version>
+            </extension>
+        </extensions>
+    </build>
+</project>
